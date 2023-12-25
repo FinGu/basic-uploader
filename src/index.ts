@@ -1,32 +1,32 @@
-const cfg = require('./config')
-const postgres = require('postgres')
-
-const express = require('express')
-const multer  = require('multer')
-
-const utils = require('./utils')
-const fs = require('fs')
+import cfg from './config'
+import express from 'express'
+import multer from 'multer'
+import fs from 'fs'
 
 const app = express()
 const upload_app = multer({})
 
-app.use('/css', express.static('node_modules/bootstrap/dist/css'))
-app.use('/js', express.static('node_modules/bootstrap/dist/js'))
+app.use('/css', express.static(__dirname + '/bootstrap/dist/css'))
+app.use('/js', express.static(__dirname + '/bootstrap/dist/js'))
 
-app.use(express.static('views'))
+app.use(express.static(__dirname + '/views/'))
 
-let database_functions = require('./db/setup')(postgres, cfg)
+import setup_db_get_functions from './db/setup'
 
-if(database_functions === null){
+let database_functions = setup_db_get_functions(cfg.database)
+
+if(!database_functions){
     console.log('Failure initializing the database')
     process.exit()
 }
 
 database_functions.create_table()
 
-const create_handler = require('./handlers/create')(database_functions, fs, utils, cfg);
+import setup_create_handler from './handlers/create'
+const create_handler = setup_create_handler(database_functions)
 
-create_handler.create_uploads_folder(cfg)
+create_handler.create_uploads_folder!()
+
 app.post('/create', upload_app.single('file'), (req, res) => {
     create_handler.handle(req.file).then((result) => {
         res.send({
@@ -36,9 +36,11 @@ app.post('/create', upload_app.single('file'), (req, res) => {
     })
 })
 
-const read_handler = require('./handlers/read')(database_functions);
+import setup_read_handler from './handlers/read'
+const read_handler = setup_read_handler(database_functions)
+
 app.get('/read', (req, res) => {
-    read_handler.handle().then(result => {
+    read_handler.handle().then((result) => {
         res.send({
             success: Array.isArray(result),
             response: result
@@ -78,8 +80,9 @@ app.get('/view/:id', (req, res) => {
     })
 })
 
+import setup_update_handler from './handlers/update'
+const update_handler = setup_update_handler(database_functions)
 
-const update_handler = require('./handlers/update')(database_functions, fs, utils);
 app.post('/update/:id', upload_app.single('file'), (req, res) => {
     let id = req.params.id;
 
@@ -91,7 +94,9 @@ app.post('/update/:id', upload_app.single('file'), (req, res) => {
     })
 })
 
-const delete_handler = require('./handlers/delete')(database_functions, fs);
+import setup_delete_handler from './handlers/delete'
+const delete_handler = setup_delete_handler(database_functions)
+
 app.get('/delete/:id', (req, res) => {
     let id = req.params.id;
 

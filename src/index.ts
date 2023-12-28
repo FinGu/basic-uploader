@@ -6,8 +6,8 @@ import fs from 'fs'
 const app = express()
 const upload_app = multer({})
 
-app.use('/css', express.static(__dirname + '/bootstrap/dist/css'))
-app.use('/js', express.static(__dirname + '/bootstrap/dist/js'))
+app.use('/css', express.static(__dirname + '/assets/bootstrap/dist/css'))
+app.use('/js', express.static(__dirname + '/assets/bootstrap/dist/js'))
 
 app.use(express.static(__dirname + '/views/'))
 
